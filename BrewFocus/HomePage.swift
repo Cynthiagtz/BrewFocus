@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomePage: View {
     @StateObject private var vm = HomePageViewModel()
+    @State private var showCelebration = false
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     private let width: Double = 250
@@ -48,13 +49,56 @@ struct HomePage: View {
                         .foregroundColor(Color("Sangria"))
                 }
                 
-                // Slider for selecting minutes
+                let sessionButtons: [(title: String, type: HomePageViewModel.SessionType)] = [("Focus", .focus), ("Short Break", .shortBreak), ("Long Break", .longBreak)]
                 
-                Slider(value: $vm.minutes, in: 1...10, step: 1)
-                    .padding()
-                    .frame(width: width)
-                    .disabled(vm.isActive)
-                    .animation(.easeInOut, value: vm.minutes)
+                //session toggle buttons
+                HStack(spacing: 15) {
+                    ForEach(sessionButtons, id: \.title) { button in
+                        Button(action: {
+                            vm.selectedSession = button.type
+                        }) {
+                            Text(button.title)
+                                .padding()
+                                .frame(minWidth: 90)
+                                .background(vm.selectedSession == button.type ? Color("CoffeeBrown") : Color.gray.opacity(0.2))
+                                .foregroundColor(vm.selectedSession == button.type ? Color("LatteBeige") : .black)
+                                .cornerRadius(12)
+                        }
+                        .disabled(vm.isActive)
+                    }
+                }
+                .padding()
+                
+                //coffee cupts to track sessions
+//                Text("Brews: \(String(repeating: "☕️", count: vm.sessionsCompleted))")
+//                    .font(.title3)
+//                    .padding(.top, 10)
+//                    .padding(.bottom, 20)
+                
+                
+                HStack(spacing: 8) {
+                    ForEach(0..<4) { index in
+                        Text("☕️")
+                            .font(.title)
+                            .opacity(index < vm.sessionsCompleted ? 1.0 : 0.2)
+                    }
+                }
+                .padding(.top, 10)
+                .animation(.easeInOut, value: vm.sessionsCompleted)
+                .padding(.bottom, 20)
+                
+                //celebratory message
+                if showCelebration {
+                    Text("You brewed 4 cups! Take a long break ☕✨")
+                        .font(.headline)
+                        .padding()
+                        .background(Color("CaramelAccent").opacity(0.8))
+                        .cornerRadius(15)
+                        .foregroundColor(.white)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(.easeInOut, value: showCelebration)
+                }
+                    
                 
                 // Start and Reset buttons
                 
@@ -81,6 +125,15 @@ struct HomePage: View {
             .alert("Timer done!", isPresented: $vm.showingAlert) {
                 Button("Continue", role: .cancel) {
                     //add functionality here later
+                }
+            }
+            .onChange(of: vm.shouldCelebrate) {
+                if vm.shouldCelebrate {
+                    showCelebration = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                        showCelebration = false
+                        vm.shouldCelebrate = false
+                    }
                 }
             }
         }

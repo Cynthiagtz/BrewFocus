@@ -11,6 +11,35 @@ import Foundation
 extension HomePage {
     final class HomePageViewModel: ObservableObject {
         
+        enum SessionType {
+            case focus, shortBreak, longBreak
+        }
+        @Published var selectedSession: SessionType = .focus
+        @Published var shouldCelebrate: Bool = false
+        
+        var selectedSessionName: String {
+            switch selectedSession {
+            case .focus:
+                return "Focus"
+            case .shortBreak:
+                return "Short Break"
+            case .longBreak:
+                return "Long Break"
+            }
+        }
+        
+        func selectedSession(_ type: SessionType) {
+            selectedSession = type
+            switch type {
+            case .focus:
+                time = "25:00"
+            case .shortBreak:
+                time = "5:00"
+            case .longBreak:
+                time = "15:00"
+            }
+        }
+        
         @Published var isActive: Bool = false
         @Published var showingAlert: Bool = false
         @Published var isBreak: Bool = false
@@ -22,16 +51,17 @@ extension HomePage {
         }
         private var initialTime = 0
         private var endDate = Date()
-        @Published var breakTime: String = "5:00"
-        @Published var session: Int = 1
+        
+        @Published var sessionsCompleted: Int = 0
         
         func startPomodoro() {
-            if isBreak && session != 4 {
-                startTimer(minutes: 5) //short break
-            } else if isBreak && session == 4 {
-                startTimer(minutes: 15)
-            } else {
+            switch selectedSession {
+            case .focus:
                 startTimer(minutes: 25)
+            case .shortBreak:
+                startTimer(minutes: 5)
+            case .longBreak:
+                startTimer(minutes: 15)
             }
         }
         
@@ -46,6 +76,10 @@ extension HomePage {
             self.minutes = Float(initialTime)
             self.isActive = false
             self.time = "\(Int(minutes)):00"
+            
+            if sessionsCompleted >= 4 {
+                sessionsCompleted = 0
+            }
         }
         
         @Published var progress: Double = 1.0
@@ -59,8 +93,18 @@ extension HomePage {
             if difference <= 0 {
                 self.isActive = false
                 self.time = "00:00"
-                self.session += 1
-                self.isBreak.toggle()
+                
+                if selectedSession == .focus {
+                    self.sessionsCompleted += 1
+                    if self.sessionsCompleted >= 4 {
+                        self.shouldCelebrate = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            self.selectedSession = .longBreak
+                            self.startPomodoro()
+                        }
+                    }
+                }
+                
                 self.showingAlert = true
 //                this is where notifications can be added
                 return
