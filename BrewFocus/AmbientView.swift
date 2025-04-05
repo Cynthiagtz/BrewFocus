@@ -9,8 +9,18 @@ import SwiftUI
 
 struct AmbientView: View {
     var body: some View {
-        Text("Customize your study space!")
         
+       ZStack {
+            Color("CreamBackground").edgesIgnoringSafeArea(.all)
+            
+           Image(systemName: "music.note")
+               .resizable()
+               .frame(width: 50, height: 65)
+               .foregroundColor(Color("CoffeeBrown"))
+               
+           
+       
+        }
     }
 }
 

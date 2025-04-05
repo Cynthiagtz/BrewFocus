@@ -4,6 +4,8 @@
 //
 //  Created by Cynthia McGowan on 4/2/25.
 //
+// This is where the timer functionality is nested
+//
 
 import SwiftUI
 import Foundation
@@ -11,11 +13,15 @@ import Foundation
 extension HomePage {
     final class HomePageViewModel: ObservableObject {
         
+        //determining which session the user chose
         enum SessionType {
             case focus, shortBreak, longBreak
         }
+        
         @Published var selectedSession: SessionType = .focus
         @Published var shouldCelebrate: Bool = false
+        private var remainingTime: TimeInterval = 0
+        @Published var isPaused: Bool = false
         
         var selectedSessionName: String {
             switch selectedSession {
@@ -28,15 +34,19 @@ extension HomePage {
             }
         }
         
+        //adjusting the timer based on the session type selected
         func selectedSession(_ type: SessionType) {
             selectedSession = type
+            isPaused = false
+            isActive = true
+            
             switch type {
             case .focus:
-                time = "25:00"
+                startTimer(minutes: 25)
             case .shortBreak:
-                time = "5:00"
+                startTimer(minutes: 5)
             case .longBreak:
-                time = "15:00"
+                startTimer(minutes: 15)
             }
         }
         
@@ -54,6 +64,7 @@ extension HomePage {
         
         @Published var sessionsCompleted: Int = 0
         
+        //function to start the timer based on the session type selected
         func startPomodoro() {
             switch selectedSession {
             case .focus:
@@ -65,11 +76,25 @@ extension HomePage {
             }
         }
         
+        
         func startTimer(minutes: Float) {
             self.initialTime = Int(minutes)
-            self.endDate = Date()
+            self.endDate = Date().addingTimeInterval(TimeInterval(initialTime * 60))
+            self.remainingTime = TimeInterval(initialTime * 60)
             self.isActive = true
-            self.endDate = Calendar.current.date(byAdding: .minute, value: Int(minutes), to: self.endDate)!
+            self.isPaused = false
+//            self.endDate = Calendar.current.date(byAdding: .minute, value: Int(minutes), to: self.endDate)!
+        }
+        
+        func pauseTimer() {
+            let now = Date()
+            self.remainingTime = endDate.timeIntervalSince(now)
+            self.isPaused = true
+        }
+        
+        func resumeTimer() {
+            self.isPaused = false
+            self.endDate = Date().addingTimeInterval(remainingTime)
         }
         
         func resetTimer() {
@@ -85,7 +110,7 @@ extension HomePage {
         @Published var progress: Double = 1.0
         
         func updateCountdown() {
-            guard isActive else { return }
+            guard isActive && !isPaused else { return }
             
             let now = Date()
             let difference = endDate.timeIntervalSince1970 - now.timeIntervalSince1970
@@ -96,14 +121,28 @@ extension HomePage {
                 
                 if selectedSession == .focus {
                     self.sessionsCompleted += 1
+                    
                     if self.sessionsCompleted >= 4 {
                         self.shouldCelebrate = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             self.selectedSession = .longBreak
                             self.startPomodoro()
                         }
+                    } else {
+                        //short break after each focus session
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            self.selectedSession = .shortBreak
+                            self.startPomodoro()
+                        }
                     }
-                }
+                } else {
+                        //if we're on a break, go back to focus
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            self.selectedSession = .focus
+                            self.startPomodoro()
+                        }
+                    }
+                
                 
                 self.showingAlert = true
 //                this is where notifications can be added

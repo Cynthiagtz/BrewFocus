@@ -12,6 +12,7 @@ struct HomePage: View {
     @State private var showCelebration = false
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
+    
     private let width: Double = 250
     var body: some View {
         ZStack {
@@ -22,13 +23,16 @@ struct HomePage: View {
                     .font(.headline)
                     .padding(.top)
                     .foregroundColor(Color("Sangria"))
+    
                 
                 Text("Ready to brew some focus?")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
-                    .padding()
+                    .padding(.top, 15)
                     .foregroundColor(Color("Sangria"))
+                    .padding(.bottom, 80)
+
                 
                 // Progress Ring with Timer in Center
                 
@@ -55,7 +59,7 @@ struct HomePage: View {
                 HStack(spacing: 15) {
                     ForEach(sessionButtons, id: \.title) { button in
                         Button(action: {
-                            vm.selectedSession = button.type
+                            vm.selectedSession(button.type)
                         }) {
                             Text(button.title)
                                 .padding()
@@ -64,10 +68,11 @@ struct HomePage: View {
                                 .foregroundColor(vm.selectedSession == button.type ? Color("LatteBeige") : .black)
                                 .cornerRadius(12)
                         }
-                        .disabled(vm.isActive)
+                        //this lets the user change between modes even if the timer has been started
+                        .disabled(false)
                     }
                 }
-                .padding()
+                .padding(.top, 50)
                 
                 //coffee cupts to track sessions
 //                Text("Brews: \(String(repeating: "☕️", count: vm.sessionsCompleted))")
@@ -83,7 +88,7 @@ struct HomePage: View {
                             .opacity(index < vm.sessionsCompleted ? 1.0 : 0.2)
                     }
                 }
-                .padding(.top, 10)
+                .padding(.top, 20)
                 .animation(.easeInOut, value: vm.sessionsCompleted)
                 .padding(.bottom, 20)
                 
@@ -100,13 +105,23 @@ struct HomePage: View {
                 }
                     
                 
-                // Start and Reset buttons
+                // Start/Pause and Reset buttons
+                
                 
                 HStack(spacing: 50) {
-                    Button("Start") {
-                        vm.startPomodoro()
+                    
+                    Button(vm.isActive ? (vm.isPaused ? "Resume" : "Pause") : "Start") {
+                        if vm.isActive {
+                            if vm.isPaused {
+                                vm.resumeTimer()
+                            } else {
+                                vm.pauseTimer()
+                            }
+                        } else {
+                            vm.startPomodoro()
+                        }
                     }
-                    .disabled(vm.isActive)
+                    .disabled(false)
                     .padding()
                     .background(Color("CoffeeBrown"))
                     .foregroundColor(Color("LatteBeige"))
@@ -117,16 +132,23 @@ struct HomePage: View {
                         .background(Color("CoffeeBrown"))
                         .foregroundColor(Color("LatteBeige"))
                         .cornerRadius(15)
+                    
                 }
                 Spacer()
                 
             }
             .padding()
-            .alert("Timer done!", isPresented: $vm.showingAlert) {
-                Button("Continue", role: .cancel) {
-                    //add functionality here later
-                }
+            .alert(Text("Session Complete!"), isPresented: $vm.showingAlert) {
+                Button("Continue", role: .cancel) {}
+            } message: {
+                Text("Great job! Your next session will begin now")
             }
+            
+//            .alert("Timer done!", isPresented: $vm.showingAlert) {
+//                Button("Continue", role: .cancel) {
+//                    //add functionality here later
+//                }
+//            }
             .onChange(of: vm.shouldCelebrate) {
                 if vm.shouldCelebrate {
                     showCelebration = true
