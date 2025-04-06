@@ -38,16 +38,22 @@ extension HomePage {
         func selectedSession(_ type: SessionType) {
             selectedSession = type
             isPaused = false
-            isActive = true
+            isActive = false // Don’t auto-start the timer
+            resetTimer()
             
             switch type {
             case .focus:
-                startTimer(minutes: 25)
+                self.time = "25:00"
+                self.minutes = 25
             case .shortBreak:
-                startTimer(minutes: 5)
+                self.time = "5:00"
+                self.minutes = 5
             case .longBreak:
-                startTimer(minutes: 15)
+                self.time = "15:00"
+                self.minutes = 15
             }
+            
+            self.progress = 1.0
         }
         
         @Published var isActive: Bool = false
