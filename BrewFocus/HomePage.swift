@@ -10,6 +10,7 @@ import SwiftUI
 struct HomePage: View {
     @StateObject private var vm = HomePageViewModel()
     @State private var showCelebration = false
+    @EnvironmentObject var themeManager: ThemeManager
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     
@@ -43,14 +44,14 @@ struct HomePage: View {
                     
                     Circle()
                         .trim(from: 0.0, to: vm.progress)
-                        .stroke(Color("CoffeeBrown"), style: StrokeStyle(lineWidth: 15, lineCap: .round))
+                        .stroke(themeManager.selectedTheme.backgroundColor, style: StrokeStyle(lineWidth: 15, lineCap: .round))
                         .rotationEffect(.degrees( -90))
                         .animation(.easeInOut, value: vm.progress)
                         .frame(width: 200, height: 200)
                     
                     Text(vm.time)
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color("Sangria"))
+                        .foregroundColor(themeManager.selectedTheme.backgroundColor)
                 }
                 
                 let sessionButtons: [(title: String, type: HomePageViewModel.SessionType)] = [("Focus", .focus), ("Short Break", .shortBreak), ("Long Break", .longBreak)]
@@ -189,4 +190,6 @@ struct HomePage: View {
 
 #Preview {
     HomePage()
+        .environmentObject(ThemeManager())
+
 }
